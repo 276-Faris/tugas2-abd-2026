@@ -40,7 +40,7 @@ Gambarkan alur bagaimana data mengalir dari disk mentah hingga ke antarmuka peng
 ```mermaid
 flowchart TD
     A[Dataset Mentah 3,49M Baris JSONL -> Olah & NLP Offline ke Parquet] --> B[DuckDB In-Process Analytics Engine]
-    B -->|Filter & Agregasi Cepat| C[Polars LazyFrame Transformation]
+    B -->|Filter & Agregasi Cepat| C[Polars DataFrame Transformation]
     C -->|Hasil Ringkas Terstruktur| D[Streamlit Caching Layer @st.cache_data]
     D --> E[Interactive UI Controls: Sidebar Widgets & Date Pickers]
     E --> F[Plotly Express / Altair Charts]
@@ -52,15 +52,25 @@ flowchart TD
 ## 4. Rencana Pemrosesan Data & Strategi Caching
 
 ### 4.1 Peran DuckDB (SQL Engine)
-- Bagaimana data dibaca? (Contoh: pembacaan langsung direktori file Parquet berpartisi temporal).
-- Operasi analitik berat apa yang didelegasikan ke DuckDB? (Contoh: `SUMMARIZE`, window function running total, agregasi bulanan/wilayah).
+    DuckDB bertugas membaca dan meringkas data langsung dari file `.parquet` tanpa harus memuat 3,49 juta baris sekaligus ke RAM. Karena format Parquet tersusun per kolom, DuckDB hanya membaca kolom yang diperlukan untuk tiap grafik dan langsung menyaring data saat pembacaan.
+
+Operasi analitik berat didelegasikan ke DuckDB diantaranya:
+- **Penyaringan sesuai filter sidebar:** menyaring data berdasarkan `kategori`, rentang tahun dari kolom `tanggal`, status `verified_purchase`, dan label `sentimen`.
+- **Perhitungan pada 4 metrik KPI:** menghitung total ulasan, rata-rata `rating`, persentase `verified_purchase`, dan total `helpful_vote` langsung menjadi satu baris ringkasan.
+- **Agregasi grafik antar tab:** menghitung jumlah ulasan dan rata-rata `rating` per bulan dan per tahun, distribusi nilai `rating` 1–5, serta komposisi `sentimen` dan perbandingan rata-rata `rating` *verified* vs *non-verified* per kategori.
+- **Statistik kuartil untuk Box Plot:** menghitung nilai minimum, kuartil bawah (Q1), median, kuartil atas (Q3), dan maksimum dari `panjang_ulasan` per kategori langsung di SQL (`QUANTILE_CONT`) agar Plotly tidak perlu memuat jutaan titik mentah ke browser.
+- **Pembatasan cuplikan tabel:** mengambil maksimal 500 baris hasil filter menggunakan `LIMIT 500` langsung di kueri untuk tampilan tabel detail.
 
 ### 4.2 Peran Polars (Transformasi Data)
-- Operasi apa yang dilakukan di Polars? (Contoh: pembuatan fitur lag, moving average, dekomposisi temporal, atau pivoting).
+Polars tidak membaca file mentah, melainkan hanya menerima tabel hasil ringkasan dari DuckDB yang ukurannya sudah sangat kecil. Langkah ini menjaga penggunaan RAM tetap rendah sambil memanfaatkan sintaks Polars yang ringkas untuk proses analitik lanjutan diantaranya:
+- **Tren rata-rata bergerak (*moving average*):** menghitung *rolling mean* dari jumlah ulasan dan rata-rata `rating` bulanan agar garis tren lebih halus dan mudah dibaca.
+- **Deteksi lonjakan anomali (IQR):** menghitung batas atas dan batas bawah *Interquartile Range* (IQR) dari jumlah ulasan bulanan untuk menandai bulan-bulan dengan lonjakan ulasan yang tidak biasa.
+- **Perhitungan persentase & penyiapan tabel:** menghitung persentase komposisi `sentimen` per kategori untuk grafik *stacked bar* serta merapikan tabel ringkasan bulanan agar siap diunduh sebagai file CSV.
 
 ### 4.3 Strategi Optimasi Memori & Caching Streamlit
-- Bagaimana mencegah aplikasi reload lambat saat pengguna mengubah filter? (Gunakan `@st.cache_data` pada fungsi kueri berat).
-- Batas memori cloud HuggingFace Spaces gratis adalah 16GB RAM; pastikan tidak menyimpan dataset mentah 1 juta baris langsung di memori Streamlit session state!
+Agar dashboard tetap ringan dan tidak melewati batas 16 GB RAM di HuggingFace Spaces, diterapkan dua metode berikut:
+- **Caching hasil kueri dengan `@st.cache_data`:** setiap fungsi yang menjalankan query DuckDB dan olahan Polars dibungkus dengan `@st.cache_data` beserta batas `ttl` (masa simpan) dan `max_entries` (jumlah maksimal kombinasi filter yang disimpan). Saat pengguna berpindah tab tanpa mengubah filter atau kembali ke kombinasi filter yang sama, hasil langsung diambil dari cache tanpa menghitung ulang, sementara batas `max_entries` mencegah RAM penuh oleh tumpukan cache.
+- **Tidak menyimpan data mentah di `st.session_state`:** dataset 3,49 juta baris tidak pernah dimuat penuh ke memori Python ataupun disimpan di `st.session_state`. Memori sesi Streamlit hanya menyimpan pilihan filter pengguna (kategori, rentang tahun, status verified, dan sentimen), sedangkan data yang masuk ke memori aplikasi hanyalah hasil agregasi kecil dan cuplikan maksimal 500 baris.
 
 ---
 

@@ -2,21 +2,21 @@
 
 **Mata Kuliah:** Analisis Big Data  
 **Target Check-in:** Pertemuan 10 (Diumumkan Pertemuan 8, repositori dibagikan Pertemuan 9)  
-**Nama Tim:** [Tuliskan Nama Tim]  
-**Topik / Judul Produk Data:** [Contoh: Dashboard Pemantauan Cuaca Ekstrem dan Kualitas Udara Indonesia]  
+**Nama Tim:** AmazonRvw  
+**Topik / Judul Produk Data:** Dashboard Analitik Kepuasan dan Sentimen Ulasan Produk Amazon (AmazonRvw)  
 
 ---
 
 ## 1. Problem Statement & Sasaran Pengguna (The Pitch)
 
 ### 1.1 Latar Belakang Masalah
-*Jelaskan permasalahan nyata atau kebutuhan analisis yang ingin diselesaikan melalui dashboard analitik ini. Mengapa data besar ini perlu disajikan secara interaktif?*
+Jumlah ulasan pembeli di platform e-commerce seperti Amazon sangat besar hingga mencapai jutaan baris dan terus bertambah setiap tahun. Ukuran data yang besar ini menyulitkan penjual maupun calon pembeli untuk memantau tren kepuasan pelanggan dari waktu ke waktu, membandingkan kualitas antar kategori produk, serta melihat lonjakan keluhan tanpa bantuan dashboard yang cepat dan interaktif.
 
 ### 1.2 Target Pengguna (Target Audience)
-*Siapa pengguna utama produk data ini? (Misal: analis meteorologi BMKG, pemangku kebijakan bencana daerah, pelaku logistik maritim, atau masyarakat umum).*
+Pengguna utama produk data ini adalah penjual atau pemilik toko online yang ingin memantau performa produk dan keluhan pembeli, serta calon pembeli dan analis e-commerce yang ingin melihat tingkat kepuasan dan perbandingan ulasan pembeli asli (*verified purchase*) dengan yang bukan.
 
 ### 1.3 Nilai Tambah & Wawasan Utama
-*Wawasan atau keputusan apa yang bisa diambil oleh pengguna setelah berinteraksi dengan dashboard ini?*
+Setelah menggunakan dashboard ini, pengguna dapat melihat tren jumlah ulasan dan rata-rata rating antar tahun, mengetahui kategori produk dengan rating tertinggi maupun terendah, melihat perbandingan sentimen ulasan (positif, netral, negatif), serta mendeteksi periode dengan lonjakan ulasan yang tidak biasa.
 
 ---
 
@@ -24,12 +24,12 @@
 
 | Parameter | Keterangan |
 |-----------|------------|
-| **Nama Dataset** | [Nama Dataset, misal: BMKG Open Data / Satu Data Indonesia / E-Commerce] |
-| **Sumber Resmi** | [Tautan URL portal data] |
-| **Format Awal** | [CSV / Parquet / JSON API] |
-| **Ukuran Data** | [Minimal >500 MB atau >1 Juta Baris] |
-| **Dimensi Waktu / Temporal** | [Rentang tanggal data, misal: 2024–2026, frekuensi per menit/jam] |
-| **Fitur / Kolom Kunci** | [Sebutkan kolom-kolom analitik penting] |
+| **Nama Dataset** | Amazon Reviews 2023 — Gabungan 3 Kategori (`All_Beauty`, `Handmade_Products`, `Appliances`) |
+| **Sumber Resmi** | https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023 |
+| **Format Awal** | `.jsonl` (dibersihkan dan diubah ke `.parquet` secara offline sebelum dipakai di dashboard) |
+| **Ukuran Data** | **1.473,51 MB** (~1,44 GB) dan **3.494.295 baris** (`All_Beauty`: 701.528 baris / 311,48 MB; `Handmade_Products`: 664.162 baris / 275,64 MB; `Appliances`: 2.128.605 baris / 886,39 MB) |
+| **Dimensi Waktu / Temporal** | **23 Oktober 2000 – 12 September 2023**, data dicatat per waktu ulasan (`timestamp` milidetik yang diubah ke tanggal harian) |
+| **Fitur / Kolom Kunci** | `rating`, `title`, `text`, `asin`, `parent_asin`, `user_id`, `timestamp`, `helpful_vote`, `verified_purchase`, ditambah kolom hasil olahan offline `kategori`, `tanggal`, `sentimen`, dan `panjang_ulasan` (kolom `images` dihapus karena sebagian besar kosong) |
 
 ---
 
@@ -39,7 +39,7 @@ Gambarkan alur bagaimana data mengalir dari disk mentah hingga ke antarmuka peng
 
 ```mermaid
 flowchart TD
-    A[Dataset Mentah >1M Baris Parquet/CSV] --> B[DuckDB In-Process Analytics Engine]
+    A[Dataset Mentah 3,49M Baris JSONL -> Olah & NLP Offline ke Parquet] --> B[DuckDB In-Process Analytics Engine]
     B -->|Filter & Agregasi Cepat| C[Polars LazyFrame Transformation]
     C -->|Hasil Ringkas Terstruktur| D[Streamlit Caching Layer @st.cache_data]
     D --> E[Interactive UI Controls: Sidebar Widgets & Date Pickers]
@@ -82,6 +82,6 @@ flowchart TD
 
 | Anggota Tim | Tanggung Jawab Utama di Phase 1 - 4 |
 |-------------|-------------------------------------|
-| Mahasiswa 1 | Desain arsitektur, data pipeline, dan integrasi Dockerfile |
-| Mahasiswa 2 | Penyusunan kueri analitik DuckDB dan optimasi partisi Parquet |
-| Mahasiswa 3 | Desain antarmuka Streamlit, visualisasi Plotly, dan deployment ke HF Spaces |
+| Zaskia Nurismi Lingga | Desain arsitektur, data pipeline, dan integrasi Dockerfile |
+| Faris Eka Iswanto | Penyusunan kueri analitik DuckDB dan optimasi partisi Parquet |
+| Fany Fauzah | Desain antarmuka Streamlit, visualisasi Plotly, dan deployment ke HF Spaces |

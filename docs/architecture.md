@@ -35,8 +35,6 @@ Setelah menggunakan dashboard ini, pengguna dapat melihat tren jumlah ulasan dan
 
 ## 3. Diagram Arsitektur Data & Aliran Informasi
 
-Gambarkan alur bagaimana data mengalir dari disk mentah hingga ke antarmuka pengguna:
-
 ```mermaid
 flowchart TD
     A[Dataset Mentah 3,49M Baris JSONL -> Olah & NLP Offline ke Parquet] --> B[DuckDB In-Process Analytics Engine]
@@ -52,14 +50,14 @@ flowchart TD
 ## 4. Rencana Pemrosesan Data & Strategi Caching
 
 ### 4.1 Peran DuckDB (SQL Engine)
-    DuckDB bertugas membaca dan meringkas data langsung dari file `.parquet` tanpa harus memuat 3,49 juta baris sekaligus ke RAM. Karena format Parquet tersusun per kolom, DuckDB hanya membaca kolom yang diperlukan untuk tiap grafik dan langsung menyaring data saat pembacaan.
+DuckDB bertugas membaca dan meringkas data langsung dari file `.parquet` tanpa harus memuat 3,49 juta baris sekaligus ke RAM. Karena format Parquet tersusun per kolom, DuckDB hanya membaca kolom yang diperlukan untuk tiap grafik dan langsung menyaring data saat pembacaan.
 
 Operasi analitik berat didelegasikan ke DuckDB diantaranya:
 - **Penyaringan sesuai filter sidebar:** menyaring data berdasarkan `kategori`, rentang tahun dari kolom `tanggal`, status `verified_purchase`, dan label `sentimen`.
 - **Perhitungan pada 4 metrik KPI:** menghitung total ulasan, rata-rata `rating`, persentase `verified_purchase`, dan total `helpful_vote` langsung menjadi satu baris ringkasan.
 - **Agregasi grafik antar tab:** menghitung jumlah ulasan dan rata-rata `rating` per bulan dan per tahun, distribusi nilai `rating` 1–5, serta komposisi `sentimen` dan perbandingan rata-rata `rating` *verified* vs *non-verified* per kategori.
 - **Statistik kuartil untuk Box Plot:** menghitung nilai minimum, kuartil bawah (Q1), median, kuartil atas (Q3), dan maksimum dari `panjang_ulasan` per kategori langsung di SQL (`QUANTILE_CONT`) agar Plotly tidak perlu memuat jutaan titik mentah ke browser.
-- **Pembatasan cuplikan tabel:** mengambil maksimal 500 baris hasil filter menggunakan `LIMIT 500` langsung di kueri untuk tampilan tabel detail.
+- **Pembatasan cuplikan tabel:** mengambil maksimal 500 baris hasil filter menggunakan `LIMIT 500` langsung di query untuk tampilan tabel detail.
 
 ### 4.2 Peran Polars (Transformasi Data)
 Polars tidak membaca file mentah, melainkan hanya menerima tabel hasil ringkasan dari DuckDB yang ukurannya sudah sangat kecil. Langkah ini menjaga penggunaan RAM tetap rendah sambil memanfaatkan sintaks Polars yang ringkas untuk proses analitik lanjutan diantaranya:

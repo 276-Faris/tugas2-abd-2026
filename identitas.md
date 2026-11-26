@@ -1,9 +1,9 @@
 # Identitas Kelompok
 
-Nama Kelompok: [Nama Kelompok]
+Nama Kelompok: AmazonRvw
 
 | No | Nama Lengkap | NIM | Akun GitHub |
-|:--:|--------------|-----|-------------|
-| 1 | NamaDepan NamaBelakang | 200510370311000 | @username1 |
-| 2 | NamaDepan NamaBelakang | 200510370311000 | @username2 |
-| 3 | NamaDepan NamaBelakang | 200510370311000 | @username3 |
+| :--- | :--- | :--- | :--- |
+| 1 | Zaskia Nurismi Lingga | 202310370311158 | @ZnLingga |
+| 2 | Faris Eka Iswanto | 202110370311276 | @276-Faris |
+| 3 | Fany Fauzah | 202310370311066 | @Fanyfauzah |

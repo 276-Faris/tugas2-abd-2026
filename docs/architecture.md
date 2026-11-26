@@ -66,15 +66,24 @@ flowchart TD
 
 ## 5. Rencana Tampilan Dashboard (Wireframe & Fitur UI)
 
+Dashboard dibangun dengan Streamlit dan Plotly. Seluruh tampilan hanya membaca hasil olahan offline berformat Parquet melalui DuckDB, dengan kolom `kategori`, `tanggal`, `rating`, `sentimen`, `verified_purchase`, `panjang_ulasan`, dan `helpful_vote`.
+
 1. **Header & Key Metrics KPI:**
-   - 4 Kartu metrik ringkasan (Total data, rata-rata, rekor ekstrem, tren persentase).
+   - 4 kartu metrik ringkasan yang mengikuti filter yang dipilih:
+     1. **Total Ulasan** terfilter.
+     2. **Rata-rata Rating** (skala 1-5).
+     3. **Persentase Pembeli Asli**, yaitu ulasan dengan `verified_purchase` bernilai benar.
+     4. **Total Klik Bermanfaat**, yaitu jumlah `helpful_vote`.
 2. **Filter Interaktif (Sidebar):**
-   - Pemilihan stasiun/wilayah, slider rentang tanggal, filter kategori.
-3. **Panel Visualisasi Utama:**
-   - **Tab 1 — Tren Temporal:** Line chart interaktif dengan range slider dan moving average.
-   - **Tab 2 — Analisis Distribusi & Anomali:** Box plot dan deteksi pencilan.
-   - **Tab 3 — Peta Wilayah / Spasial:** Choropleth map sebaran provinsi atau scatter map koordinat stasiun.
-   - **Tab 4 — Tabel Data Detail:** Tampilan cuplikan data terfilter dengan opsi download ringkasan CSV.
+   - **Kategori produk** (pilih 1 sampai 3 dari `All_Beauty`, `Handmade_Products`, `Appliances`).
+   - **Slider rentang tahun** (data tahun 2000-2023).
+   - **Status pembeli asli** (semua, verified saja, atau non-verified saja).
+   - **Sentimen** (positif, netral, negatif).
+3. **Panel Visualisasi Utama (4 Tab):**
+   - **Tab 1 — Tren Temporal:** Grafik garis jumlah ulasan atau rata-rata rating per bulan dari tahun ke tahun, dilengkapi garis rata-rata bergerak (*moving average*) dan range slider. Di bawahnya ada bar chart jumlah ulasan per tahun menurut kategori.
+   - **Tab 2 — Distribusi & Anomali:** Bar chart sebaran nilai rating (1-5), box plot sebaran panjang ulasan per kategori, serta grafik jumlah ulasan bulanan dengan penanda lonjakan ulasan yang tidak biasa (pencilan metode IQR).
+   - **Tab 3 — Perbandingan Kategori & Analisis Sentimen :**  perbandingan antar 3 kategori produk: komposisi sentimen positif/netral/negatif (stacked bar 100%), rata-rata rating per kategori, dan perbandingan rata-rata rating ulasan *verified* vs non-verified.
+   - **Tab 4 — Tabel Data Detail:** Cuplikan tabel data hasil filter (500 baris) dengan tombol unduh ringkasan bulanan dalam format CSV.
 
 ---
 
